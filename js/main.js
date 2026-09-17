@@ -170,11 +170,15 @@
     submitBtn.textContent = isSubmitting ? '전송 중…' : '문의 보내기';
   }
 
-  function showSuccess(inquiryId) {
+  function showSuccess(inquiryId, emailSent) {
     contactForm.hidden = true;
     if (contactSuccess) contactSuccess.hidden = false;
     if (successInquiryId && inquiryId) {
-      successInquiryId.textContent = '문의번호: ' + inquiryId;
+      var idText = '문의번호: ' + inquiryId;
+      if (emailSent === false) {
+        idText += ' (시트 저장 완료, 관리자 메일 발송 실패)';
+      }
+      successInquiryId.textContent = idText;
       successInquiryId.hidden = false;
     } else if (successInquiryId) {
       successInquiryId.hidden = true;
@@ -251,7 +255,10 @@
 
       try {
         var result = await submitInquiry(payload);
-        showSuccess(result.inquiry_id);
+        showSuccess(result.inquiry_id, result.email_sent);
+        if (result.email_sent === false && result.email_error) {
+          console.warn('Admin email failed:', result.email_error);
+        }
       } catch (err) {
         showError(err.message || '다시 시도해 주세요.');
       } finally {

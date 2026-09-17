@@ -1,7 +1,9 @@
 /**
- * LUMERA LAB 문의 폼 → Google Sheets 저장 + 관리자 이메일 알림
- * Google Sheets: 확장 프로그램 → Apps Script에 붙여넣기
+ * LUMERA LAB 문의 폼 - Google Sheets 저장 + 관리자 이메일 알림
+ * Google Sheets: 확장 프로그램 > Apps Script에 붙여넣기
  * 시트 탭 이름: INQUIRIES (1행 헤더 필수)
+ *
+ * 이메일 권한 최초 설정: 편집기에서 testAdminEmail 실행 > 권한 허용 > 새 버전 재배포
  */
 const SHEET_NAME = 'INQUIRIES';
 const ADMIN_EMAIL = '1959.kimik@gmail.com';
@@ -42,23 +44,22 @@ function doPost(e) {
       'NEW',
     ]);
 
-    let emailSent = false;
-    try {
-      sendAdminNotification(inquiryId, categoryLabel, data, submittedAt);
-      emailSent = true;
-    } catch (mailErr) {
-      Logger.log('Admin email failed: ' + mailErr);
-    }
+    const emailResult = sendAdminNotification(inquiryId, categoryLabel, data, submittedAt);
+    updateEmailStatus(sheet, emailResult);
 
-    return jsonResponse({ success: true, inquiry_id: inquiryId, email_sent: emailSent });
+    return jsonResponse({
+      success: true,
+      inquiry_id: inquiryId,
+      email_sent: emailResult.sent,
+      email_error: emailResult.sent ? '' : emailResult.error,
+    });
   } catch (err) {
     return jsonResponse({ success: false, message: String(err) });
   }
 }
 
-function sendAdminNotification(inquiryId, categoryLabel, data, submittedAt) {
-  const subject = '[LUMERA LAB] 새 문의 접수 - ' + inquiryId;
-  const lines = [
+function buildNotificationBody(inquiryId, categoryLabel, data, submittedAt) {
+  return [
     'LUMERA LAB 웹사이트에 새 문의가 접수되었습니다.',
     '',
     '문의번호: ' + inquiryId,
@@ -74,16 +75,66 @@ function sendAdminNotification(inquiryId, categoryLabel, data, submittedAt) {
     data.message,
     '',
     '---',
-    'Google Sheets INQUIRIES 탭에서 status를 확인·변경할 수 있습니다.',
-  ];
+    'Google Sheets INQUIRIES 탭에서 status를 확인하고 변경할 수 있습니다.',
+  ].join('\n');
+}
 
-  MailApp.sendEmail({
-    to: ADMIN_EMAIL,
-    subject: subject,
-    body: lines.join('\n'),
+function sendAdminNotification(inquiryId, categoryLabel, data, submittedAt) {
+  const subject = '[LUMERA LAB] 새 문의 접수 - ' + inquiryId;
+  const body = buildNotificationBody(inquiryId, categoryLabel, data, submittedAt);
+  const options = {
     replyTo: data.email,
-    name: 'LUMERA LAB 문의',
-  });
+    name: 'LUMERA LAB',
+  };
+
+  try {
+    GmailApp.sendEmail(ADMIN_EMAIL, subject, body, options);
+    return { sent: true, error: '' };
+  } catch (gmailErr) {
+    Logger.log('GmailApp failed: ' + gmailErr);
+  }
+
+  try {
+    MailApp.sendEmail(ADMIN_EMAIL, subject, body, options);
+    return { sent: true, error: '' };
+  } catch (mailErr) {
+    Logger.log('MailApp failed: ' + mailErr);
+    return { sent: false, error: String(mailErr) };
+  }
+}
+
+function updateEmailStatus(sheet, emailResult) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  let statusCol = headerRow.indexOf('email_status') + 1;
+
+  if (statusCol === 0) {
+    statusCol = sheet.getLastColumn() + 1;
+    sheet.getRange(1, statusCol).setValue('email_status');
+  }
+
+  const statusValue = emailResult.sent ? 'SENT' : 'FAILED: ' + emailResult.error;
+  sheet.getRange(lastRow, statusCol).setValue(statusValue);
+}
+
+function testAdminEmail() {
+  const result = sendAdminNotification(
+    'LM-TEST-0001',
+    '테스트',
+    {
+      name: '테스트 고객',
+      email: 'test@example.com',
+      company: '',
+      phone: '',
+      product: 'N01 Radiance Serum',
+      message: 'Apps Script 이메일 발송 테스트입니다.',
+    },
+    Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')
+  );
+
+  Logger.log(result.sent ? '테스트 메일 발송 성공' : '테스트 메일 발송 실패: ' + result.error);
 }
 
 function makeInquiryId(date, sheet) {
