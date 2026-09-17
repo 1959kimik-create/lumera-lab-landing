@@ -1,9 +1,10 @@
 /**
- * LUMERA LAB 문의 폼 → Google Sheets 저장
+ * LUMERA LAB 문의 폼 → Google Sheets 저장 + 관리자 이메일 알림
  * Google Sheets: 확장 프로그램 → Apps Script에 붙여넣기
  * 시트 탭 이름: INQUIRIES (1행 헤더 필수)
  */
 const SHEET_NAME = 'INQUIRIES';
+const ADMIN_EMAIL = '1959.kimik@gmail.com';
 
 function doPost(e) {
   try {
@@ -23,11 +24,12 @@ function doPost(e) {
     }
 
     const now = new Date();
+    const submittedAt = Utilities.formatDate(now, 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
     const inquiryId = makeInquiryId(now, sheet);
     const categoryLabel = data.category === 'b2b' ? 'B2B 문의' : '일반 문의';
 
     sheet.appendRow([
-      Utilities.formatDate(now, 'Asia/Seoul', 'yyyy-MM-dd HH:mm'),
+      submittedAt,
       inquiryId,
       categoryLabel,
       data.name,
@@ -40,10 +42,48 @@ function doPost(e) {
       'NEW',
     ]);
 
-    return jsonResponse({ success: true, inquiry_id: inquiryId });
+    let emailSent = false;
+    try {
+      sendAdminNotification(inquiryId, categoryLabel, data, submittedAt);
+      emailSent = true;
+    } catch (mailErr) {
+      Logger.log('Admin email failed: ' + mailErr);
+    }
+
+    return jsonResponse({ success: true, inquiry_id: inquiryId, email_sent: emailSent });
   } catch (err) {
     return jsonResponse({ success: false, message: String(err) });
   }
+}
+
+function sendAdminNotification(inquiryId, categoryLabel, data, submittedAt) {
+  const subject = '[LUMERA LAB] 새 문의 접수 - ' + inquiryId;
+  const lines = [
+    'LUMERA LAB 웹사이트에 새 문의가 접수되었습니다.',
+    '',
+    '문의번호: ' + inquiryId,
+    '접수일시: ' + submittedAt,
+    '문의 유형: ' + categoryLabel,
+    '이름: ' + data.name,
+    '이메일: ' + data.email,
+    '회사명: ' + (data.company || '-'),
+    '연락처: ' + (data.phone || '-'),
+    '관심 제품: ' + (data.product || '-'),
+    '',
+    '문의 내용:',
+    data.message,
+    '',
+    '---',
+    'Google Sheets INQUIRIES 탭에서 status를 확인·변경할 수 있습니다.',
+  ];
+
+  MailApp.sendEmail({
+    to: ADMIN_EMAIL,
+    subject: subject,
+    body: lines.join('\n'),
+    replyTo: data.email,
+    name: 'LUMERA LAB 문의',
+  });
 }
 
 function makeInquiryId(date, sheet) {

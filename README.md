@@ -53,11 +53,18 @@ npx serve .
 
 ## Google Sheets 문의 연동
 
-문의 폼 제출 시 [Apps Script Web App](https://script.google.com/macros/s/AKfycbzVXOdk26hBB3niHRDFT1Dw89wuhkij_tpD3Pmx3L709iuNyYy9WTQLPfRnjSCAJEB7/exec)으로 POST되어 Google Sheets `INQUIRIES` 탭에 저장됩니다.
+문의 폼 제출 시 [Apps Script Web App](https://script.google.com/macros/s/AKfycbzVXOdk26hBB3niHRDFT1Dw89wuhkij_tpD3Pmx3L709iuNyYy9WTQLPfRnjSCAJEB7/exec)으로 POST되어 Google Sheets `INQUIRIES` 탭에 저장되고, 관리자 이메일(`1959.kimik@gmail.com`)로 알림이 발송됩니다.
 
 - 프론트: `js/main.js` → `CONTACT_API_URL`
 - 서버 스크립트 참고: `apps-script/Code.gs`
 - Web App URL을 브라우저 주소창에 열면 `doGet` 없음 오류가 나올 수 있음 (정상, POST 전용)
+
+### Apps Script 업데이트 (이메일 알림 반영)
+
+1. Google Sheets → **확장 프로그램 → Apps Script**
+2. `apps-script/Code.gs` 내용 전체를 붙여넣기
+3. **배포 → 배포 관리 → 연필 아이콘 → 새 버전 → 배포**
+4. 처음 실행 시 **이메일 발송 권한** 승인 필요
 
 ### 시트 헤더 (1행)
 
