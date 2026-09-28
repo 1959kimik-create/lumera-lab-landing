@@ -4,11 +4,19 @@
   var client = null;
   var session = null;
   var pendingBoardOpen = false;
+  var pendingComposeOpen = false;
 
   var navBoardLink = document.getElementById('navBoardLink');
   var headerAuthBtn = document.getElementById('headerAuthBtn');
   var headerUserEmail = document.getElementById('headerUserEmail');
   var boardSection = document.getElementById('board');
+  var boardListPanel = document.getElementById('boardListPanel');
+  var boardComposeModal = document.getElementById('boardComposeModal');
+  var boardComposeBackdrop = document.getElementById('boardComposeBackdrop');
+  var boardComposeClose = document.getElementById('boardComposeClose');
+  var boardGoComposeBtn = document.getElementById('boardGoComposeBtn');
+  var boardGoListBtn = document.getElementById('boardGoListBtn');
+  var boardIntro = document.getElementById('boardIntro');
   var boardList = document.getElementById('boardList');
   var boardEmpty = document.getElementById('boardEmpty');
   var boardForm = document.getElementById('boardForm');
@@ -73,10 +81,51 @@
     return !!(session && session.user);
   }
 
+  function isModalOpen() {
+    return (
+      (authModal && !authModal.hidden) ||
+      (boardComposeModal && !boardComposeModal.hidden)
+    );
+  }
+
+  function syncBodyModalClass() {
+    if (isModalOpen()) document.body.classList.add('modal-open');
+    else document.body.classList.remove('modal-open');
+  }
+
   function setBoardVisible(visible) {
     if (!boardSection) return;
     boardSection.hidden = !visible;
     boardSection.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    if (!visible) {
+      closeBoardComposeModal();
+    }
+  }
+
+  function closeBoardComposeModal() {
+    if (boardComposeModal) boardComposeModal.hidden = true;
+    syncBodyModalClass();
+  }
+
+  function showBoardListView() {
+    closeBoardComposeModal();
+    if (boardListPanel) boardListPanel.hidden = false;
+  }
+
+  function showBoardComposeView() {
+    if (!isLoggedIn()) {
+      pendingComposeOpen = true;
+      openAuthModal('login', { openBoardAfter: true });
+      return;
+    }
+    showBoardFormError('');
+    if (boardComposeModal) boardComposeModal.hidden = false;
+    document.body.classList.add('modal-open');
+    if (boardTitle) {
+      window.setTimeout(function () {
+        boardTitle.focus();
+      }, 0);
+    }
   }
 
   function updateHeaderAuth() {
@@ -99,6 +148,7 @@
   function openAuthModal(mode, options) {
     if (!authModal) return;
     pendingBoardOpen = !!(options && options.openBoardAfter);
+    if (options && options.openComposeAfter) pendingComposeOpen = true;
     authModal.hidden = false;
     document.body.classList.add('modal-open');
     setAuthTab(mode === 'signup' ? 'signup' : 'login');
@@ -108,8 +158,9 @@
   function closeAuthModal() {
     if (!authModal) return;
     authModal.hidden = true;
-    document.body.classList.remove('modal-open');
+    syncBodyModalClass();
     pendingBoardOpen = false;
+    pendingComposeOpen = false;
   }
 
   function clearAuthErrors() {
@@ -138,6 +189,7 @@
       return false;
     }
     setBoardVisible(true);
+    showBoardListView();
     loadPosts();
     scrollToSection('#board');
     return true;
@@ -268,7 +320,9 @@
       if (result.error) throw result.error;
 
       if (boardForm) boardForm.reset();
+      showBoardListView();
       await loadPosts();
+      scrollToSection('#board');
     } catch (err) {
       showBoardFormError(err.message || '글 등록에 실패했습니다.');
     } finally {
@@ -295,8 +349,13 @@
       if (pendingBoardOpen) {
         pendingBoardOpen = false;
         setBoardVisible(true);
+        showBoardListView();
         await loadPosts();
         scrollToSection('#board');
+        if (pendingComposeOpen) {
+          pendingComposeOpen = false;
+          showBoardComposeView();
+        }
       }
     } catch (err) {
       if (loginError) {
@@ -336,8 +395,13 @@
         if (pendingBoardOpen) {
           pendingBoardOpen = false;
           setBoardVisible(true);
+          showBoardListView();
           await loadPosts();
           scrollToSection('#board');
+          if (pendingComposeOpen) {
+            pendingComposeOpen = false;
+            showBoardComposeView();
+          }
         }
         return;
       }
@@ -396,9 +460,21 @@
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
   if (signupForm) signupForm.addEventListener('submit', handleSignup);
   if (boardForm) boardForm.addEventListener('submit', submitPost);
+  if (boardGoComposeBtn) {
+    boardGoComposeBtn.addEventListener('click', function () {
+      showBoardComposeView();
+    });
+  }
+  if (boardGoListBtn) {
+    boardGoListBtn.addEventListener('click', showBoardListView);
+  }
+  if (boardComposeClose) boardComposeClose.addEventListener('click', showBoardListView);
+  if (boardComposeBackdrop) boardComposeBackdrop.addEventListener('click', showBoardListView);
 
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && authModal && !authModal.hidden) closeAuthModal();
+    if (e.key !== 'Escape') return;
+    if (authModal && !authModal.hidden) closeAuthModal();
+    else if (boardComposeModal && !boardComposeModal.hidden) showBoardListView();
   });
 
   getClient().auth.onAuthStateChange(function (_event, newSession) {
