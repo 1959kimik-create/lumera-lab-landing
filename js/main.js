@@ -15,10 +15,22 @@
   const submitBtn = document.getElementById('submitBtn');
   const successInquiryId = document.getElementById('successInquiryId');
 
-  const CONTACT_API_URL =
-    'https://script.google.com/macros/s/AKfycbzVXOdk26hBB3niHRDFT1Dw89wuhkij_tpD3Pmx3L709iuNyYy9WTQLPfRnjSCAJEB7/exec';
-
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function getSupabaseClient() {
+    if (typeof supabase === 'undefined' || typeof supabase.createClient !== 'function') {
+      throw new Error('Supabase SDK를 불러오지 못했습니다.');
+    }
+    if (
+      typeof SUPABASE_URL !== 'string' ||
+      typeof SUPABASE_ANON_KEY !== 'string' ||
+      SUPABASE_URL.indexOf('YOUR_SUPABASE') === 0 ||
+      SUPABASE_ANON_KEY.indexOf('YOUR_SUPABASE') === 0
+    ) {
+      throw new Error('js/config.js 에 Supabase URL과 anon key를 설정해 주세요.');
+    }
+    return supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
 
   /* ----- Smooth scroll with header offset ----- */
   function scrollToSection(target) {
@@ -170,15 +182,11 @@
     submitBtn.textContent = isSubmitting ? '전송 중…' : '문의 보내기';
   }
 
-  function showSuccess(inquiryId, emailSent) {
+  function showSuccess(inquiryId) {
     contactForm.hidden = true;
     if (contactSuccess) contactSuccess.hidden = false;
     if (successInquiryId && inquiryId) {
-      var idText = '문의번호: ' + inquiryId;
-      if (emailSent === false) {
-        idText += ' (시트 저장 완료, 관리자 메일 발송 실패)';
-      }
-      successInquiryId.textContent = idText;
+      successInquiryId.textContent = '문의번호: ' + inquiryId;
       successInquiryId.hidden = false;
     } else if (successInquiryId) {
       successInquiryId.hidden = true;
@@ -187,15 +195,25 @@
   }
 
   async function submitInquiry(payload) {
-    var response = await fetch(CONTACT_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
+    var client = getSupabaseClient();
+    var response = await client.rpc('submit_inquiry', {
+      p_category: payload.category,
+      p_name: payload.name,
+      p_email: payload.email,
+      p_company: payload.company || '',
+      p_phone: payload.phone || '',
+      p_product: payload.product || '',
+      p_message: payload.message,
+      p_privacy_agree: payload.privacy_agree,
     });
 
-    var result = await response.json();
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || '문의 전송에 실패했습니다.');
+    if (response.error) {
+      throw new Error(response.error.message || '문의 전송에 실패했습니다.');
+    }
+
+    var result = response.data;
+    if (!result || !result.success) {
+      throw new Error((result && result.message) || '문의 전송에 실패했습니다.');
     }
     return result;
   }
@@ -255,10 +273,7 @@
 
       try {
         var result = await submitInquiry(payload);
-        showSuccess(result.inquiry_id, result.email_sent);
-        if (result.email_sent === false && result.email_error) {
-          console.warn('Admin email failed:', result.email_error);
-        }
+        showSuccess(result.inquiry_id);
       } catch (err) {
         showError(err.message || '다시 시도해 주세요.');
       } finally {

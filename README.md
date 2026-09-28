@@ -51,24 +51,15 @@ npx serve .
 - HTML5 / CSS3 / Vanilla JavaScript
 - Google Fonts (Cormorant Garamond, Noto Sans KR)
 
-## Google Sheets 문의 연동
+## Supabase 문의 연동
 
-문의 폼 제출 시 [Apps Script Web App](https://script.google.com/macros/s/AKfycbzVXOdk26hBB3niHRDFT1Dw89wuhkij_tpD3Pmx3L709iuNyYy9WTQLPfRnjSCAJEB7/exec)으로 POST되어 Google Sheets `INQUIRIES` 탭에 저장되고, 관리자 이메일(`1959.kimik@gmail.com`)로 알림이 발송됩니다.
+문의 폼 제출 시 Supabase `submit_inquiry` RPC로 `inquiries` 테이블에 저장됩니다.
 
-- 프론트: `js/main.js` → `CONTACT_API_URL`
-- 서버 스크립트 참고: `apps-script/Code.gs`
-- Web App URL을 브라우저 주소창에 열면 `doGet` 없음 오류가 나올 수 있음 (정상, POST 전용)
+1. [`../6.lumera-lab-admin/supabase/README.md`](../6.lumera-lab-admin/supabase/README.md) 에서 DB·Auth 설정
+2. `js/config.js` 에 Project URL·anon key 입력
+3. 프론트: `js/main.js` (Supabase JS)
 
-### Apps Script 업데이트 (이메일 알림 반영)
-
-1. Google Sheets → **확장 프로그램 → Apps Script**
-2. `apps-script/Code.gs` 내용 전체를 붙여넣기
-3. **배포 → 배포 관리 → 연필 아이콘 → 새 버전 → 배포**
-4. 처음 실행 시 **이메일 발송 권한** 승인 필요
-
-### 시트 헤더 (1행)
-
-`submitted_at | inquiry_id | category | name | email | company | phone | product | message | privacy_agree | status`
+레거시 Google Sheets·이메일 알림은 `apps-script/Code.gs` 참고 (현재 런타임 경로 아님).
 
 ## 2차 확장 (미구현)
 
