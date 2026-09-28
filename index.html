@@ -22,12 +22,19 @@
         <span></span>
         <span></span>
       </button>
-      <nav class="nav" id="navMenu" aria-label="주요 메뉴">
-        <a href="#about" class="nav-link">About</a>
-        <a href="#products" class="nav-link">Products</a>
-        <a href="#research" class="nav-link">Research</a>
-        <a href="#contact" class="nav-link">Contact</a>
-      </nav>
+      <div class="header-right">
+        <nav class="nav" id="navMenu" aria-label="주요 메뉴">
+          <a href="#about" class="nav-link">About</a>
+          <a href="#products" class="nav-link">Products</a>
+          <a href="#research" class="nav-link">Research</a>
+          <a href="#board" class="nav-link" id="navBoardLink">게시판</a>
+          <a href="#contact" class="nav-link">Contact</a>
+        </nav>
+        <div class="header-auth" id="headerAuth">
+          <span class="header-auth__email" id="headerUserEmail" hidden></span>
+          <button type="button" class="btn btn--ghost btn--header" id="headerAuthBtn">로그인</button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -129,6 +136,36 @@
       </div>
     </section>
 
+    <!-- Board (members only) -->
+    <section class="section section--board" id="board" hidden aria-hidden="true">
+      <div class="section-inner reveal">
+        <p class="label">Community</p>
+        <h2 class="section-title">게시판</h2>
+        <p class="section-body board-intro">회원 전용 공간입니다. 로그인 후 글을 읽고 작성할 수 있습니다.</p>
+
+        <div class="board-layout">
+          <div class="board-list-wrap">
+            <p class="board-empty" id="boardEmpty" hidden>아직 등록된 글이 없습니다.</p>
+            <div class="board-list" id="boardList"></div>
+          </div>
+
+          <form class="board-form" id="boardForm">
+            <h3 class="board-form__title">새 글 작성</h3>
+            <div class="form-group">
+              <label for="boardTitle">제목</label>
+              <input type="text" id="boardTitle" name="title" required maxlength="200" />
+            </div>
+            <div class="form-group">
+              <label for="boardBody">내용</label>
+              <textarea id="boardBody" name="body" rows="5" required maxlength="5000"></textarea>
+            </div>
+            <p class="form-error" id="boardFormError" role="alert" hidden></p>
+            <button type="submit" class="btn btn--primary btn--full" id="boardSubmitBtn">글 등록</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
     <!-- Contact -->
     <section class="section section--contact" id="contact">
       <div class="contact-bg" aria-hidden="true">
@@ -198,6 +235,48 @@
     </section>
   </main>
 
+  <div class="auth-modal" id="authModal" hidden role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <div class="auth-modal__backdrop" id="authModalBackdrop"></div>
+    <div class="auth-modal__panel">
+      <button type="button" class="auth-modal__close" id="authModalClose" aria-label="닫기">&times;</button>
+      <h2 class="auth-modal__title" id="authModalTitle">회원</h2>
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab is-active" id="authTabLogin">로그인</button>
+        <button type="button" class="auth-tab" id="authTabSignup">회원가입</button>
+      </div>
+
+      <form class="auth-form" id="loginForm">
+        <div class="form-group">
+          <label for="loginEmail">이메일</label>
+          <input type="email" id="loginEmail" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">비밀번호</label>
+          <input type="password" id="loginPassword" required autocomplete="current-password" />
+        </div>
+        <p class="form-error" id="loginError" role="alert" hidden></p>
+        <button type="submit" class="btn btn--primary btn--full">로그인</button>
+      </form>
+
+      <form class="auth-form" id="signupForm" hidden>
+        <div class="form-group">
+          <label for="signupEmail">이메일</label>
+          <input type="email" id="signupEmail" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">비밀번호</label>
+          <input type="password" id="signupPassword" required autocomplete="new-password" minlength="6" />
+        </div>
+        <div class="form-group">
+          <label for="signupPasswordConfirm">비밀번호 확인</label>
+          <input type="password" id="signupPasswordConfirm" required autocomplete="new-password" minlength="6" />
+        </div>
+        <p class="form-error" id="signupError" role="alert" hidden></p>
+        <button type="submit" class="btn btn--primary btn--full">회원가입</button>
+      </form>
+    </div>
+  </div>
+
   <footer class="footer">
     <div class="footer-inner">
       <p class="footer-logo">LUMERA LAB</p>
@@ -208,5 +287,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/auth-board.js"></script>
 </body>
 </html>

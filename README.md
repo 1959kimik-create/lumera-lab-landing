@@ -33,6 +33,14 @@ npx serve .
 
 브라우저에서 `http://localhost:8080` (또는 serve가 안내하는 포트) 접속
 
+## Supabase 회원·게시판
+
+- 헤더 **게시판**: 로그인한 회원만 글 목록·작성 (`board_posts`)
+- **로그인 / 회원가입**: Supabase Authentication (이메일·비밀번호)
+- 비로그인 시 게시판 클릭 → 로그인 모달 (게시판 미노출)
+
+DB: [`../6.lumera-lab-admin/supabase/board-schema.sql`](../6.lumera-lab-admin/supabase/board-schema.sql) 실행 필요.
+
 ## Supabase 문의 연동
 
 문의 폼 제출 시 Supabase `submit_inquiry` RPC로 `inquiries` 테이블에 저장됩니다.
