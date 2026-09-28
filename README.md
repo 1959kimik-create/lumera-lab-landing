@@ -27,39 +27,33 @@
 
 ## 로컬 실행
 
-정적 파일이므로 로컬 서버로 열면 됩니다.
-
 ```bash
-# Python
-python -m http.server 8080
-
-# Node (npx)
 npx serve .
 ```
 
-브라우저에서 `http://localhost:8080` 접속
-
-## 배포 (Vercel)
-
-1. [Vercel](https://vercel.com)에 프로젝트 연결
-2. Root Directory: 이 폴더
-3. Build Command / Output Directory: 비워두기 (정적 사이트)
-4. Deploy
-
-## 기술 스택
-
-- HTML5 / CSS3 / Vanilla JavaScript
-- Google Fonts (Cormorant Garamond, Noto Sans KR)
+브라우저에서 `http://localhost:8080` (또는 serve가 안내하는 포트) 접속
 
 ## Supabase 문의 연동
 
 문의 폼 제출 시 Supabase `submit_inquiry` RPC로 `inquiries` 테이블에 저장됩니다.
 
-1. [`../6.lumera-lab-admin/supabase/README.md`](../6.lumera-lab-admin/supabase/README.md) 에서 DB·Auth 설정
-2. `js/config.js` 에 Project URL·anon key 입력
-3. 프론트: `js/main.js` (Supabase JS)
+1. [`../6.lumera-lab-admin/supabase/README.md`](../6.lumera-lab-admin/supabase/README.md) — DB·Auth
+2. 로컬: `js/config.js` (예: `js/config.example.js` 복사 또는 sync 스크립트)
+3. Vercel: `SUPABASE_URL`, `SUPABASE_ANON_KEY` 환경 변수
 
-레거시 Google Sheets·이메일 알림은 `apps-script/Code.gs` 참고 (현재 런타임 경로 아님).
+## 배포 (Vercel)
+
+```bash
+npx vercel deploy --prod --scope 1959kimik-4270
+```
+
+`vercel.json`의 `buildCommand`가 배포 시 `js/config.js`를 생성합니다.
+
+## 기술 스택
+
+- HTML5 / CSS3 / Vanilla JavaScript
+- Supabase JS
+- Google Fonts (Cormorant Garamond, Noto Sans KR)
 
 ## 2차 확장 (미구현)
 
